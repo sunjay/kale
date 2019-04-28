@@ -15,6 +15,7 @@ struct Shader<'a> {
 
 impl<'a> Pipeline for Shader<'a> {
     type Vertex = u16;
+    /// No need to return the normal because backface culling isn't used
     type VsOut = ();
     type Pixel = u32;
 
@@ -81,6 +82,7 @@ fn main() {
         mvp,
     };
     // Need to disable backface culling because there are no backfaces in 2D graphics
+    // and because the tessellator always seem to return the wrong vertex order
     shader.draw::<rasterizer::Triangles<_, BackfaceCullingDisabled>, _>(
         &buffers.indices[..],
         &mut color,
