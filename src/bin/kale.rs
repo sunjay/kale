@@ -1,10 +1,8 @@
-use std::f32::consts::PI;
-
 use lyon::path::Path;
 use lyon::math::point;
 use lyon::tessellation::{VertexBuffers, FillTessellator, FillVertex, FillOptions};
 use lyon::tessellation::geometry_builder::simple_builder;
-use euc::{Pipeline, buffer::Buffer2d, rasterizer};
+use euc::{Pipeline, buffer::Buffer2d, rasterizer::{self, BackfaceCullingDisabled}};
 use minifb::{Window, WindowOptions, Key, KeyRepeat};
 use vek::{Vec3, Vec4, Mat4};
 
@@ -45,7 +43,7 @@ fn main() {
     path_builder.move_to(point(0.0, 0.0));
     path_builder.line_to(point(1.0, 2.0));
     path_builder.line_to(point(2.0, 0.0));
-    // path_builder.line_to(point(1.0, 1.0));
+    path_builder.line_to(point(1.0, 1.0));
     path_builder.close();
     let path = path_builder.build();
 
@@ -76,14 +74,14 @@ fn main() {
     let mut color = Buffer2d::new([WIDTH, HEIGHT], 0);
     let mut depth = Buffer2d::new([WIDTH, HEIGHT], 1.0);
 
-    // Need to rotate by 180 degrees because the tesselator flips all the vertices
     // Scaling needs to be set such that all coordinates are between -1.0 and 1.0
-    let mvp = Mat4::rotation_x(PI) * Mat4::scaling_3d(0.5);
+    let mvp = Mat4::scaling_3d(0.5);
     let shader = Shader {
         vertices: &buffers.vertices[..],
         mvp,
     };
-    shader.draw::<rasterizer::Triangles<_>, _>(
+    // Need to disable backface culling because there are no backfaces in 2D graphics
+    shader.draw::<rasterizer::Triangles<_, BackfaceCullingDisabled>, _>(
         &buffers.indices[..],
         &mut color,
         &mut depth,
