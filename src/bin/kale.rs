@@ -1,9 +1,12 @@
+use std::f32::consts::PI;
+
 use lyon::path::Path;
 use lyon::math::point;
 use lyon::tessellation::{VertexBuffers, FillTessellator, FillVertex, FillOptions};
 use lyon::tessellation::geometry_builder::simple_builder;
 use euc::{Pipeline, buffer::Buffer2d, rasterizer};
 use minifb::{Window, WindowOptions, Key, KeyRepeat};
+use vek::{Vec3, Vec4, Mat4};
 
 struct Shader<'a> {
     vertices: &'a [FillVertex],
@@ -11,15 +14,19 @@ struct Shader<'a> {
 
 impl<'a> Pipeline for Shader<'a> {
     type Vertex = u16;
-    type VsOut = (f32, f32);
+    type VsOut = ();
     type Pixel = u32;
 
     #[inline(always)]
     fn vert(&self, &index: &Self::Vertex) -> ([f32; 3], Self::VsOut) {
         let vert = self.vertices[index as usize];
-        let pos = vert.position.to_3d().to_array();
-        let normal = vert.normal.to_tuple();
-        (pos, normal)
+        let pos = Vec4::from_point(vert.position.to_3d().to_array());
+        let mvp = Mat4::rotation_x(2.0*PI/2.0) * Mat4::scaling_3d(0.5);
+        // let mvp = Mat4::<f32>::identity();
+        let pos_cam = Vec3::from(mvp * pos).into_array();
+        let normal = mvp * Vec4::from_point(vert.normal.to_3d().to_array());
+        // let normal = Vec3::from(normal.normalized());
+        dbg!((pos_cam, ()))
     }
 
     #[inline(always)]
