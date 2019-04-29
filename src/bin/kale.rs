@@ -2,7 +2,7 @@ use lyon::path::Path;
 use lyon::math::point;
 use lyon::tessellation::{VertexBuffers, FillTessellator, FillVertex, FillOptions};
 use lyon::tessellation::geometry_builder::simple_builder;
-use euc::{Pipeline, buffer::Buffer2d, rasterizer::{self, BackfaceCullingDisabled}};
+use euc::{Pipeline, buffer::Buffer2d, rasterizer::{Triangles, BackfaceCullingDisabled}};
 use minifb::{Window, WindowOptions, Key, KeyRepeat};
 use vek::{Vec3, Vec4, Mat4};
 
@@ -83,7 +83,7 @@ fn main() {
     };
     // Need to disable backface culling because there are no backfaces in 2D graphics
     // and because the tessellator always seem to return the wrong vertex order
-    shader.draw::<rasterizer::Triangles<_, BackfaceCullingDisabled>, _>(
+    shader.draw::<Triangles<_, BackfaceCullingDisabled>, _>(
         &buffers.indices[..],
         &mut color,
         &mut depth,
