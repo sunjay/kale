@@ -1,6 +1,6 @@
 use lyon::path::Path;
 use lyon::math::point;
-use lyon::tessellation::{VertexBuffers, FillTessellator, FillVertex, FillOptions};
+use lyon::tessellation::{VertexBuffers, StrokeTessellator, StrokeVertex, StrokeOptions, LineCap, LineJoin};
 use lyon::tessellation::geometry_builder::simple_builder;
 use euc::{Pipeline, buffer::Buffer2d, rasterizer::{Triangles, BackfaceCullingDisabled}};
 use minifb::{Window, WindowOptions, Key, KeyRepeat};
@@ -8,7 +8,7 @@ use vek::{Vec3, Vec4, Mat4};
 
 struct Shader<'a> {
     /// The vertices to render
-    vertices: &'a [FillVertex],
+    vertices: &'a [StrokeVertex],
     /// The Model-View-Projection matrix
     mvp: Mat4<f32>,
 }
@@ -42,25 +42,30 @@ fn main() {
     // Create a simple path.
     let mut path_builder = Path::builder();
     path_builder.move_to(point(0.0, 0.0));
-    path_builder.line_to(point(1.0, 2.0));
-    path_builder.line_to(point(2.0, 0.0));
-    path_builder.line_to(point(1.0, 1.0));
+    path_builder.line_to(point(200.0, 400.0));
+    path_builder.line_to(point(400.0, 0.0));
+    path_builder.line_to(point(200.0, 200.0));
     path_builder.close();
     let path = path_builder.build();
 
     // Create the destination vertex and index buffers.
-    let mut buffers: VertexBuffers<FillVertex, u16> = VertexBuffers::new();
+    let mut buffers: VertexBuffers<StrokeVertex, u16> = VertexBuffers::new();
 
     {
         let mut vertex_builder = simple_builder(&mut buffers);
 
         // Create the tessellator.
-        let mut tessellator = FillTessellator::new();
+        let mut tessellator = StrokeTessellator::new();
 
         // Compute the tessellation.
+        //let options = FillOptions::default().with_normals(false);
+        let options = StrokeOptions::default()
+            .with_line_width(50.0)
+            .with_line_cap(LineCap::Round)
+            .with_line_join(LineJoin::Round);
         let result = tessellator.tessellate_path(
             path.iter(),
-            &FillOptions::default().with_normals(false),
+            &options,
             &mut vertex_builder
         );
         assert!(result.is_ok());
@@ -76,7 +81,7 @@ fn main() {
     let mut depth = Buffer2d::new([WIDTH, HEIGHT], 1.0);
 
     // Scaling needs to be set such that all coordinates are between -1.0 and 1.0
-    let mvp = Mat4::scaling_3d(0.5);
+    let mvp = Mat4::scaling_3d((1.0/WIDTH as f32, 1.0/HEIGHT as f32, 1.0));
     let shader = Shader {
         vertices: &buffers.vertices[..],
         mvp,
