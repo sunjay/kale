@@ -1,3 +1,13 @@
+//! A simplified version of the turtle crate designed to test out the renderer in order to make
+//! sure that it meets the needs of the turtle crate.
+//!
+//! The renderer is designed to only re-render as much as it needs to. This is in contrast to the
+//! original naive renderer which always re-rendered all of the drawing commands every frame.
+
+use std::thread;
+use std::time::Duration;
+
+use minifb::{Window, WindowOptions, Key, KeyRepeat};
 use vek::{Vec2, Rgba};
 
 mod radians {
@@ -177,6 +187,13 @@ impl Renderer {
             commands: Vec::new(),
         }
     }
+
+    pub fn apply(&mut self, command: RendererCommand) {
+    }
+
+    pub fn render(&self, frame_buffer: &mut [u32]) {
+
+    }
 }
 
 fn main() {
@@ -231,4 +248,29 @@ fn main() {
         Undo {id},
         Redo {id},
     ];
+
+    const WIDTH: usize = 640;
+    const HEIGHT: usize = 480;
+
+    let mut frame_buffer = vec![0; WIDTH * HEIGHT];
+
+    let mut renderer = Renderer::new(WIDTH, HEIGHT);
+
+    let mut win = Window::new("Kale", WIDTH, HEIGHT,
+        WindowOptions {scale: minifb::Scale::X2, ..WindowOptions::default()}).unwrap();
+    for command in commands {
+        if !(win.is_open() && !win.is_key_pressed(Key::Escape, KeyRepeat::No)) {
+            return;
+        }
+
+        renderer.apply(command);
+        renderer.render(&mut frame_buffer);
+        win.update_with_buffer(&frame_buffer).unwrap();
+
+        thread::sleep(Duration::from_millis(500));
+    }
+
+    while win.is_open() && !win.is_key_pressed(Key::Escape, KeyRepeat::No) {
+        thread::sleep(Duration::from_millis(1000 / 60));
+    }
 }
