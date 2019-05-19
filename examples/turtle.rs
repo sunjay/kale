@@ -182,15 +182,15 @@ impl Renderer {
 fn main() {
     let id = 1;
     let pen = Pen {
-        color: Rgba {r: 255.0, g: 0.0, b: 0.0, a: 1.0},
+        color: RED,
         stroke_width: 30.0,
         ..Pen::default()
     };
     let pen2 = Pen {
-        color: Rgba {r: 0.0, g: 0.0, b: 255.0, a: 1.0},
+        color: BLUE,
         ..pen
     };
-    let fill_color = Rgba {r: 0.0, g: 255.0, b: 255.0, a: 1.0};
+    let fill_color = CYAN;
 
     use RendererCommand::*;
     use DrawCommand::*;
