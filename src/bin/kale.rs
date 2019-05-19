@@ -95,7 +95,9 @@ fn main() {
     );
 
     let mut win = Window::new("Kale", WIDTH, HEIGHT,
-        WindowOptions::default()).unwrap();
+        WindowOptions {
+            scale: minifb::Scale::X2, ..WindowOptions::default()
+        }).unwrap();
     while win.is_open() && !win.is_key_pressed(Key::Escape, KeyRepeat::No) {
         win.update_with_buffer(color.as_ref()).unwrap();
     }
