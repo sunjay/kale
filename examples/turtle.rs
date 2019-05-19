@@ -1,8 +1,8 @@
 use vek::{Vec2, Rgba};
 
 mod radians {
-    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
-    struct Radians(f64);
+    #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+    pub struct Radians(f64);
 
     impl Radians {
         pub fn from_degrees(angle: f64) -> Self {
@@ -36,21 +36,21 @@ enum RendererCommand {
     /// Push a draw command onto the display list and associate it with this ID.
     ///
     /// Clears the redo stack for this ID.
-    Push {id: ID, command: PathCommand},
+    Push {id: ID, command: DrawCommand},
     /// Replace the last draw command pushed onto the display list with this ID.
     ///
     /// Clears the redo stack for this ID.
-    Replace {id: ID, command: PathCommand},
+    Replace {id: ID, command: DrawCommand},
     /// Designates the current point in the display list as the beginning of a shape that will be
     /// filled with the given color. If either Undo/Redo are used after this command, it will clear
-    /// this designation.
+    /// this designation without applying the fill in any way. Use EndFill to avoid this.
     ///
     /// Subsequent BeginFill commands do not do anything. Only the first will be applied.
-    BeginFill(Color),
+    BeginFill {id: ID, color: Color},
     /// Completes the filled shape started by BeginFill.
     ///
     /// If no shape was being filled, this does nothing.
-    EndFill,
+    EndFill {id: ID},
     /// Remove the last draw command pushed onto the display list with this ID.
     ///
     /// Places the removed draw command onto the redo stack for this ID.
@@ -59,6 +59,10 @@ enum RendererCommand {
     /// Removes the last path command placed on the redo stack for this ID and adds it to the
     /// display list. The command remains associated with this ID.
     Redo {id: ID},
+    /// Clears the entire display list for this ID
+    ///
+    /// Note that the very last SetPen command (if any) will be retained.
+    Clear {id: ID},
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -103,14 +107,29 @@ struct Image {
 enum DrawCommand {
     /// If the pen is not enabled, any subsequent draw commands will move to their destination
     /// position without drawing anything.
+    ///
+    /// Note that since this is a draw command, undo/redo will apply to this.
     SetPen(Pen),
-    /// Draw a line to the given point. Only moves the path if the current pen is not enabled.
+    /// Draw a line to the given point.
+    ///
+    /// Only moves the path without drawing anything if the current pen is not enabled.
     LineTo(Point),
-    /// Draw an arc with the given parameters. Only moves the path if the current pen is not enabled.
+    /// Draw a circular arc with the given parameters.
+    ///
+    /// Only moves the path without drawing anything if the current pen is not enabled.
     Arc {
-        /// radius left of the turtle
+        /// The heading to use as reference when determining the meaning of various directions like
+        /// "forward", "left", "right", "backwards". (see other fields)
+        heading: Radians,
+        /// The radius of the circular arc to the "left" of the current position based on the
+        /// heading.
+        ///
+        /// The arc will be drawn counterclockwise if this is position and clockwise otherwise.
         radius: f64,
-        /// angle of the circle to draw in radians
+        /// The angle of the circular arc to draw. Can be an entire circle (or more or less).
+        ///
+        /// If this is negative, the arc will be drawn "backwards" from the current position based
+        /// on the heading.
         extent: Radians,
     },
     /// Draws text using current pen.
@@ -138,8 +157,78 @@ impl Default for Pen {
     fn default() -> Self {
         Self {
             enabled: true,
-            color: color::BLACK,
+            color: Rgba::black(),
             stroke_width: 1.0,
         }
     }
+}
+
+struct Renderer {
+    width: usize,
+    height: usize,
+    commands: Vec<DrawCommand>,
+}
+
+impl Renderer {
+    pub fn new(width: usize, height: usize) -> Self {
+        Self {
+            width,
+            height,
+            commands: Vec::new(),
+        }
+    }
+}
+
+fn main() {
+    let id = 1;
+    let pen = Pen {
+        color: Rgba {r: 255.0, g: 0.0, b: 0.0, a: 1.0},
+        stroke_width: 30.0,
+        ..Pen::default()
+    };
+    let pen2 = Pen {
+        color: Rgba {r: 0.0, g: 0.0, b: 255.0, a: 1.0},
+        ..pen
+    };
+    let fill_color = Rgba {r: 0.0, g: 255.0, b: 255.0, a: 1.0};
+
+    use RendererCommand::*;
+    use DrawCommand::*;
+    let commands = vec![
+        // This line will be immediately replaced because we set the pen
+        // The Replace command isn't actually meant to be used like this (it's for animations), but
+        // this is a good test to make sure it works more generally
+        Push {id, command: LineTo(Point {x: 0.0, y: 100.0})},
+        Replace {id, command: SetPen(pen)},
+
+        // Should still keep the pen no matter how many times we clear
+        Clear {id},
+        Clear {id},
+        Clear {id},
+
+        BeginFill {id, color: fill_color},
+
+        Push {id, command: LineTo(Point {x: 0.0, y: 100.0})},
+        Push {id, command: LineTo(Point {x: 100.0, y: 100.0})},
+        // Change the pen halfway through, still filling
+        Push {id, command: SetPen(pen2)},
+        Undo {id},
+        Redo {id},
+        Push {id, command: LineTo(Point {x: 100.0, y: 0.0})},
+        Push {id, command: Arc {
+            heading: Radians::from_degrees(-90.0),
+            radius: -40.0,
+            extent: Radians::from_degrees(180.0),
+        }},
+
+        Undo {id},
+        Undo {id},
+        Redo {id},
+        Redo {id},
+
+        EndFill {id},
+
+        Undo {id},
+        Redo {id},
+    ];
 }
