@@ -33,6 +33,8 @@ fn main() {
 }
 ```
 
+## Line Capping
+
 Rules:
 
 * Pen down when turtle is created
@@ -131,3 +133,32 @@ The depth buffer is populated from the `z` coordinates of the point returned
 from the vertex shader. We would just have to be careful that this isn't
 accidentally used in any actual shader calculations or we'll end up with some
 incorrect renders.
+
+## Push and Replace
+
+This is a less robust version than the "time" solution, but may be much simpler
+to implement. It is a generalization of the notion of a "temporary" path that
+we have been using so far.
+
+Essentially, we have two drawing commands:
+
+* `PushPath(Path)` - appends a new path to the display list
+* `ReplacePath(Path)` - replaces the last path **placed by this turtle** on the
+  display list
+
+The idea is that all turtles share the same display list in the drawing. Instead
+of having a "temporary" path that is always drawn on top, we keep a normal
+"first-come-first-serve" order for all paths. The turtle keeps a "cursor" to
+their last drawn path. This can then be used to update that path if
+`ReplacePath` is used.
+
+To cope with undo/redo, the cursor will have to be sufficiently robust so that
+it does not get invalidated by updates to the display list. We can also consider
+maybe storing the display list as a BTree or something and giving each node a
+unique ID. This would save us the trouble of having to re-index everything
+whenever an item is deleted.
+
+This is less robust because the pixels will have the drawing order of when they
+initially get pushed into the display list. So multiple overlaps will not be
+supported. This might result in some unintuitive behaviour, but I think it is a
+reasonable trade-off.
