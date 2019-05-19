@@ -11,5 +11,6 @@ A 2D graphics library aiming to support the needs of the [turtle] crate.
 - [ ] Text
   - [ ] Animated text drawing (letter by letter)
 - [ ] Images (stamps?)
+- [ ] Resizing the window
 
 [turtle]: https://github.com/sunjay/turtle
