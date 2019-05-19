@@ -9,6 +9,7 @@ A 2D graphics library aiming to support the needs of the [turtle] crate.
 - [ ] Border of filled shape may change its drawing properties at any point along the path
   - i.e. you can have filled shapes where the border is multicolored
 - [ ] Text
+  - [ ] Animated text drawing (letter by letter)
 - [ ] Images (stamps?)
 
 [turtle]: https://github.com/sunjay/turtle
