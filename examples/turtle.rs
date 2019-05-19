@@ -9,6 +9,7 @@ use std::time::Duration;
 
 use minifb::{Window, WindowOptions, Key, KeyRepeat};
 use vek::{Vec2, Rgba};
+use kale::Texture;
 
 mod radians {
     #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
@@ -181,6 +182,8 @@ struct Renderer {
     width: usize,
     height: usize,
     commands: Vec<DrawCommand>,
+    /// Keep a single texture in the renderer to avoid re-allocating this storage
+    texture: Texture,
 }
 
 impl Renderer {
@@ -189,14 +192,28 @@ impl Renderer {
             width,
             height,
             commands: Vec::new(),
+            texture: Texture::new(width, height),
         }
     }
 
     pub fn apply(&mut self, command: RendererCommand) {
     }
 
-    pub fn render(&self, frame_buffer: &mut [u32]) {
-
+    pub fn render(&mut self, frame_buffer: &mut [u32]) {
+        let mut canvas = self.texture.canvas();
+        let mut pen = Pen::default();
+        for command in &self.commands {
+            use DrawCommand::*;
+            match command {
+                SetPen(pen) => {/*TODO*/},
+                LineTo(pos) => {/*TODO*/},
+                Arc {heading, radius, extent} => {
+                    //TODO: https://stackoverflow.com/questions/5736398/how-to-calculate-the-svg-path-for-an-arc-of-a-circle
+                },
+                Text(_) => {/*TODO*/},
+                Image(_) => {/*TODO*/},
+            }
+        }
     }
 }
 
