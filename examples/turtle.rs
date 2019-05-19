@@ -147,12 +147,16 @@ enum DrawCommand {
     /// This will draw a line to the bottom-right of the drawn text. Note that if the pen is not
     /// enabled, no text will be drawn and no line will be produced, but the path will still move an
     /// adequate amount to draw the text. (Consistent with the behaviour of LineTo)
+    //TODO: Is this the best decision? It might be annoying to set the pen size to 0.0 just to draw
+    // some text.
     Text(Text),
     /// Draws an image.
     ///
     /// This will draw a line to the bottom-right of the drawn image. Note that if the pen is not
     /// enabled, no image will be drawn and no line will be produced, but the path will still move
     /// an adequate amount to draw the image. (Consistent with the behaviour of LineTo)
+    //TODO: Is this the best decision? It might be annoying to set the pen size to 0.0 just to draw
+    // an image.
     Image(Image),
 }
 
