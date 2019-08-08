@@ -134,6 +134,52 @@ from the vertex shader. We would just have to be careful that this isn't
 accidentally used in any actual shader calculations or we'll end up with some
 incorrect renders.
 
+## More notes on time
+
+To avoid floating point precision problems, it is probably safest to use the
+relative time since the start of the program (or some other starting point)
+represented as an integer. We can then losslessly convert that integer to a
+floating point number. This conversion is lossless as long as the integer is
+quite small. From my testing, we can count up to `16777216` without running into
+any issues. (`16777217` is represented the same was as `16777216`).
+
+This is proven by the following program:
+
+```rust
+fn main() {
+    let mut prev = 0.0;
+    for i in 10_000_000u128.. {
+        let val = i as f32;
+        assert_ne!(prev, val, "prev = {}, i = {}, val = {}", prev, i, val);
+        prev = val;
+    }
+}
+```
+
+Note that this limit is because we're using `f32`. With 64-bits it would be much
+larger.
+
+If we represent the time in milliseconds (good enough for 60 FPS), we can get
+`16777216 ms` which is approximately 4 hours and 40 minutes. The program won't
+crash after this point. Instead, you'll get a slightly subtler bug:
+crisscrossing lines will be drawn with one side always on top.
+
+Given that it takes almost 5 hours of running the program to reach this point,
+we could consider this a reasonable trade-off and only switch to something more
+robust if people complain.
+
+## More Robust Than Time
+
+A potentially more robust (and much more complex) solution is to keep "overlap
+counters" for each pixel. The idea is that we create something akin to the depth
+buffer, but instead of using the time that the process has been running to
+populate its values, we keep an individual count per pixel. This will probably
+involve storing something in each drawing that records the non-zero count values
+for each of its pixels (very memory intensive). This will let us populate the
+depth buffer by looking up the order of a given pixel in the drawing. Computing
+this over and over again would probably be very complex, so storing the values
+during the initial drawing of a shape is probably easier.
+
 ## Push and Replace
 
 This is a less robust version than the "time" solution, but may be much simpler
